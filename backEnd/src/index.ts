@@ -22,9 +22,11 @@ app.get("/", (req, res) => {
   res.json({
     message: "UofC Healthcare Assistant API",
     version: "2.0.0",
+    status: "running",
     endpoints: {
       chatbot: "/api/chat",
       resources: "/api/resources",
+      health: "/api/health",
     },
   });
 });
@@ -37,13 +39,17 @@ app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
     timestamp: new Date().toISOString(),
+    environment: config.nodeEnv,
   });
 });
 
 // Error handling
 app.use(errorHandler);
 
-app.listen(config.port, () => {
-  console.log(`✅ Server running on port ${config.port}`);
+const PORT = config.port;
+
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
   console.log(`📍 Environment: ${config.nodeEnv}`);
+  console.log(`🔑 OpenAI API Key: ${config.openaiApiKey ? "Configured" : "Missing"}`);
 });
