@@ -8,7 +8,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export class UCalgaryService {
-  private cacheFile = path.join(__dirname, "../data/ucalgary.json");
+  // Point to src/data instead of dist/data
+  private cacheFile = path.join(__dirname, "../../src/data/ucalgary.json");
   private cacheExpiry = 24 * 60 * 60 * 1000; // 24 hours
 
   async getWellnessResources() {
@@ -88,23 +89,31 @@ export class UCalgaryService {
 
       const age = Date.now() - new Date(parsed.cachedAt).getTime();
       if (age < this.cacheExpiry) {
+        console.log("✅ Using cached UCalgary data");
         return parsed.data;
       }
+      console.log("⏰ Cache expired, fetching fresh data");
     } catch (error) {
-      // Cache doesn't exist or is invalid
+      console.log("📥 No cache found, fetching fresh data");
     }
     return null;
   }
 
   private async saveCache(data: any) {
     try {
+      // Ensure the data directory exists
+      const dataDir = path.dirname(this.cacheFile);
+      await fs.mkdir(dataDir, { recursive: true });
+      
       const cacheData = {
         cachedAt: new Date().toISOString(),
         data,
       };
       await fs.writeFile(this.cacheFile, JSON.stringify(cacheData, null, 2));
-    } catch (error) {
-      console.error("Error saving cache:", error);
+      console.log("✅ Cache saved successfully");
+    } catch (error: any) {
+      console.error("⚠️ Error saving cache (non-critical):", error.message);
+      // Don't throw - caching failure shouldn't break the app
     }
   }
 
