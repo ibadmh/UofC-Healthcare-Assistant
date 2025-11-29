@@ -39,15 +39,34 @@ Always be warm, non-judgmental, and provide specific next steps.`;
 export class ChatbotController {
   async chat(req: Request, res: Response) {
     try {
+      console.log("📨 Chat request received");
+      
       const { message, conversationHistory } = req.body;
 
       if (!message) {
+        console.log("❌ No message provided");
         return res.status(400).json({ error: "Message is required" });
       }
 
+      console.log("💬 Message:", message);
+
+      // Check if OpenAI key is configured
+      if (!config.openaiApiKey) {
+        console.error("❌ OpenAI API key is not configured!");
+        return res.status(500).json({ 
+          error: "OpenAI API key not configured",
+          message: "Please contact the administrator"
+        });
+      }
+
+      console.log("🔑 OpenAI key configured");
+
       // Detect intent and fetch relevant resources
       const intent = this.detectIntent(message);
+      console.log("🎯 Detected intent:", intent);
+
       const resources = await this.fetchRelevantResources(intent);
+      console.log("📚 Resources fetched");
 
       // Build context with resources
       const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
@@ -74,12 +93,16 @@ export class ChatbotController {
         content: message,
       });
 
+      console.log("🤖 Calling OpenAI API...");
+
       const completion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages,
         temperature: 0.7,
         max_tokens: 1000,
       });
+
+      console.log("✅ OpenAI response received");
 
       const reply = completion.choices[0].message.content;
 
@@ -95,9 +118,43 @@ export class ChatbotController {
           },
         ],
       });
+
+      console.log("✅ Response sent successfully");
     } catch (error: any) {
-      console.error("Chat error:", error);
-      res.status(500).json({ error: "Failed to process chat request" });
+      console.error("❌ Chat error:", error);
+      console.error("Error details:", {
+        message: error.message,
+        status: error.status,
+        type: error.type,
+        code: error.code,
+      });
+
+      // Handle specific OpenAI errors
+      if (error.status === 429) {
+        return res.status(429).json({ 
+          error: "Rate limit exceeded. Please try again later.",
+          details: error.message 
+        });
+      }
+
+      if (error.status === 401) {
+        return res.status(500).json({ 
+          error: "API authentication failed. Please check credentials.",
+          details: error.message 
+        });
+      }
+
+      if (error.code === "insufficient_quota") {
+        return res.status(500).json({ 
+          error: "OpenAI account has insufficient credits.",
+          details: "Please add credits to your OpenAI account" 
+        });
+      }
+
+      res.status(500).json({
+        error: "Failed to process chat request",
+        details: error.message,
+      });
     }
   }
 
@@ -106,6 +163,7 @@ export class ChatbotController {
 
     if (
       lower.includes("anxious") ||
+      lower.includes("anxiety") ||
       lower.includes("depressed") ||
       lower.includes("overwhelmed") ||
       lower.includes("mental health") ||
@@ -165,52 +223,57 @@ export class ChatbotController {
   }
 
   private async fetchRelevantResources(intent: string) {
-    switch (intent) {
-      case "mental_health":
-        const wellness = await ucalgaryService.getWellnessResources();
-        const ahs = await ahsService.getResources();
-        const su = suService.getResources();
-        return {
-          ucalgary: wellness.mentalHealth,
-          ahs: ahs.mentalHealthHelpLine,
-          distressCentre: ahs.distressCentre,
-          insurance: su.insurance,
-        };
+    try {
+      switch (intent) {
+        case "mental_health":
+          const wellness = await ucalgaryService.getWellnessResources();
+          const ahs = await ahsService.getResources();
+          const su = suService.getResources();
+          return {
+            ucalgary: wellness.mentalHealth,
+            ahs: ahs.mentalHealthHelpLine,
+            distressCentre: ahs.distressCentre,
+            insurance: su.insurance,
+          };
 
-      case "financial_support":
-        return {
-          studentCare: suService.getResources().insurance,
-          freeServices: (await ucalgaryService.getWellnessResources()).mentalHealth,
-        };
+        case "financial_support":
+          return {
+            studentCare: suService.getResources().insurance,
+            freeServices: (await ucalgaryService.getWellnessResources()).mentalHealth,
+          };
 
-      case "sexual_health":
-        return {
-          medicalClinic: (await ucalgaryService.getWellnessResources()).medicalClinic,
-          clinics: await ahsService.searchClinics("Calgary"),
-        };
+        case "sexual_health":
+          return {
+            medicalClinic: (await ucalgaryService.getWellnessResources()).medicalClinic,
+            clinics: await ahsService.searchClinics("Calgary"),
+          };
 
-      case "food_security":
-        return {
-          foodBank: suService.getResources().foodSecurity,
-        };
+        case "food_security":
+          return {
+            foodBank: suService.getResources().foodSecurity,
+          };
 
-      case "crisis":
-        const ahsResources = await ahsService.getResources();
-        return {
-          emergency: "911",
-          mentalHealthHelpLine: ahsResources.mentalHealthHelpLine,
-          distressCentre: ahsResources.distressCentre,
-          campusSecurity: "403-220-5333",
-        };
+        case "crisis":
+          const ahsResources = await ahsService.getResources();
+          return {
+            emergency: "911",
+            mentalHealthHelpLine: ahsResources.mentalHealthHelpLine,
+            distressCentre: ahsResources.distressCentre,
+            campusSecurity: "403-220-5333",
+          };
 
-      case "physical_health":
-        return {
-          medicalClinic: (await ucalgaryService.getWellnessResources()).medicalClinic,
-          healthLink: (await ahsService.getResources()).healthLink,
-        };
+        case "physical_health":
+          return {
+            medicalClinic: (await ucalgaryService.getWellnessResources()).medicalClinic,
+            healthLink: (await ahsService.getResources()).healthLink,
+          };
 
-      default:
-        return null;
+        default:
+          return null;
+      }
+    } catch (error) {
+      console.error("Error fetching resources:", error);
+      return null;
     }
   }
 }
