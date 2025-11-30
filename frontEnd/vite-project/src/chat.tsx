@@ -13,7 +13,7 @@ export default function ChatPage() {
   useEffect(() => {
     // optional welcome message
     setMessages([
-      { id: 'm-welcome', role: 'assistant', text: 'Hi — I am UHealth Friend. How can I help you today?' },
+      { id: 'm-welcome', role: 'assistant', text: 'Hi, welcome to HealthConnect. How can I help you today?' },
     ]);
   }, []);
 
