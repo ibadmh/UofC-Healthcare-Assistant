@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import type { Message } from '../types/chat';
 
 type Props = { message: Message; index?: number };
@@ -11,6 +11,38 @@ export default function MessageBubble({ message, index = 0 }: Props) {
   const animationStyle: React.CSSProperties = {
     animationDelay: `${index * 35}ms`
   };
+
+  const [displayText, setDisplayText] = useState<string>(isUser ? message.text : '');
+
+  useEffect(() => {
+    let mounted = true;
+    const full = message.text ?? '';
+
+    if (message.role === 'assistant') {
+      setDisplayText('');
+      // Adjust delay so longer messages type a bit faster overall
+      const delay = Math.max(6, Math.floor(700 / Math.max(1, full.length)));
+      let i = 0;
+      const id = setInterval(() => {
+        if (!mounted) return;
+        i += 1;
+        setDisplayText(full.slice(0, i));
+        if (i >= full.length) clearInterval(id);
+      }, delay);
+
+      return () => {
+        mounted = false;
+        clearInterval(id);
+      };
+    }
+
+    // for user or other roles, render immediately
+    setDisplayText(full);
+
+    return () => {
+      mounted = false;
+    };
+  }, [message.text, message.role]);
 
   return (
     <div style={{ display: 'flex', justifyContent: isUser ? 'flex-end' : 'flex-start' }}>
@@ -34,7 +66,7 @@ export default function MessageBubble({ message, index = 0 }: Props) {
             ...animationStyle
           }}
         >
-          <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{message.text}</div>
+          <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{displayText}</div>
         </div>
 
         {isUser && (
