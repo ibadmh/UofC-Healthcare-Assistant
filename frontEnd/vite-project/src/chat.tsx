@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { sendMessage } from './api/chat';
 import type { Message } from './types/chat';
 import MessageList from './components/MessageList';
@@ -8,7 +8,6 @@ import './styles/chat.css';
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isSending, setIsSending] = useState(false);
-  const listRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     // optional welcome message

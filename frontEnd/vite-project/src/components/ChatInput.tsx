@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 export default function ChatInput({ onSend, disabled }: { onSend: (text: string) => void | Promise<void>; disabled?: boolean }) {
   const [text, setText] = useState('');
@@ -22,7 +22,7 @@ export default function ChatInput({ onSend, disabled }: { onSend: (text: string)
           padding: '12px 16px',
           fontSize: '14px',
           color: '#1f2937',
-          placeholder: '#9ca3af',
+          //placeholder: '#9ca3af',
           outline: 'none',
           transition: 'all 0.2s ease'
         }}
