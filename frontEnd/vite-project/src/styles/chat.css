@@ -29,3 +29,21 @@
 
 .msg-row { display: flex; gap: 12px; align-items: flex-end; }
 
+/* Custom scrollbar to match the pink aesthetic */
+#message-list {
+	scrollbar-width: thin;
+	scrollbar-color: rgba(255,183,208,0.85) transparent; /* firefox */
+}
+
+#message-list::-webkit-scrollbar { width: 10px; }
+#message-list::-webkit-scrollbar-track { background: transparent; }
+#message-list::-webkit-scrollbar-thumb {
+	background: linear-gradient(180deg, #ffb7d0, #ffd7e6);
+	border-radius: 999px;
+	border: 2px solid rgba(255,255,255,0.12);
+}
+#message-list::-webkit-scrollbar-thumb:hover {
+	filter: brightness(0.95);
+}
+
+

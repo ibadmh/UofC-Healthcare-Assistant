@@ -1,25 +1,47 @@
 import React from 'react';
 import type { Message } from '../types/chat';
 
-export default function MessageBubble({ message }: { message: Message }) {
+type Props = { message: Message; index?: number };
+
+export default function MessageBubble({ message, index = 0 }: Props) {
   const isUser = message.role === 'user';
+
+  const avatarLabel = isUser ? 'You' : 'HC';
+
+  const animationStyle: React.CSSProperties = {
+    animationDelay: `${index * 35}ms`
+  };
 
   return (
     <div style={{ display: 'flex', justifyContent: isUser ? 'flex-end' : 'flex-start' }}>
-      <div
-        style={{
-          maxWidth: '70%',
-          padding: '12px 16px',
-          borderRadius: '16px',
-          fontSize: '14px',
-          lineHeight: '1.5',
-          backgroundColor: isUser ? '#ffffff' : '#ffffff',
-          color: '#1f2937',
-          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.03)',
-          border: isUser ? '2px solid #fbd4e3' : '2px solid #f3e8f3'
-        }}
-      >
-        {message.text}
+      <div className="msg-row" style={{ width: '100%', justifyContent: isUser ? 'flex-end' : 'flex-start' }}>
+        {!isUser && (
+          <div className="msg-avatar" style={{ background: '#fde8f2', color: '#7b1646' }} aria-hidden>
+            🤖
+          </div>
+        )}
+
+        <div
+          className="msg"
+          style={{
+            maxWidth: '72%',
+            background: isUser ? 'linear-gradient(90deg,#ffd7e6,#ffb7d0)' : 'white',
+            color: isUser ? '#33051a' : '#111827',
+            padding: '12px 14px',
+            borderRadius: 14,
+            boxShadow: '0 6px 18px rgba(16,24,40,0.06)',
+            border: '1px solid rgba(16,24,40,0.04)',
+            ...animationStyle
+          }}
+        >
+          <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{message.text}</div>
+        </div>
+
+        {isUser && (
+          <div className="msg-avatar" style={{ background: '#ffd7e6', color: '#33051a' }} aria-hidden>
+            {avatarLabel}
+          </div>
+        )}
       </div>
     </div>
   );
